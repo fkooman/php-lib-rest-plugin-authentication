@@ -1,0 +1,28 @@
+{
+    "authors": [
+        {
+            "email": "fkooman@tuxed.net",
+            "name": "Fran\u00e7ois Kooman",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "fkooman\\Rest\\Plugin\\Authentication\\": "src/"
+        }
+    },
+    "description": "Authentication plugin for fkooman/rest",
+    "license": "Apache-2.0",
+    "name": "fkooman/rest-plugin-authentication",
+    "require": {
+        "fkooman/rest": "dev-master",
+        "php": ">=5.3.3"
+    },
+    "suggest": {
+        "fkooman/rest-plugin-basic": "Basic Authentication plugin",
+        "fkooman/rest-plugin-bearer": "Bearer (OAuth) Authentication plugin",
+        "fkooman/rest-plugin-indieauth": "IndieAuth Authentication plugin",
+        "fkooman/rest-plugin-mellon": "Mellon (SAML) Authentication plugin",
+        "fkooman/rest-plugin-tls": "TLS Client Certificate Authentication plugin"
+    }
+}
