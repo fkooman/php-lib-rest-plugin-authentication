@@ -15,6 +15,10 @@
     "license": "Apache-2.0",
     "name": "fkooman/rest-plugin-authentication",
     "require": {
+        "ext-dom": "*",
+        "ext-filter": "*",
+        "ext-libxml": "*",
+        "ext-openssl": "*",
         "ext-pcre": "*",
         "ext-spl": "*",
         "fkooman/base64": "~1.0.0",
