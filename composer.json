@@ -15,14 +15,13 @@
     "license": "Apache-2.0",
     "name": "fkooman/rest-plugin-authentication",
     "require": {
+        "ext-pcre": "*",
+        "ext-spl": "*",
+        "fkooman/base64": "~1.0.0",
+        "fkooman/cert-parser": "~1.0.0",
         "fkooman/rest": "dev-master",
+        "guzzlehttp/guzzle": "~5.3",
+        "ircmaxell/password-compat": "~1.0",
         "php": ">=5.3.3"
-    },
-    "suggest": {
-        "fkooman/rest-plugin-basic": "Basic Authentication plugin",
-        "fkooman/rest-plugin-bearer": "Bearer (OAuth) Authentication plugin",
-        "fkooman/rest-plugin-indieauth": "IndieAuth Authentication plugin",
-        "fkooman/rest-plugin-mellon": "Mellon (SAML) Authentication plugin",
-        "fkooman/rest-plugin-tls": "TLS Client Certificate Authentication plugin"
     }
 }
