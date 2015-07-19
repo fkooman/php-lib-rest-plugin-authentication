@@ -41,26 +41,34 @@ class AuthenticationPlugin implements ServicePluginInterface
 
     public function init(Service $service)
     {
-        foreach ($this->plugins as $plugin) {
+        foreach ($this->plugins as $friendlyName => $plugin) {
             if (method_exists($plugin, 'init')) {
                 $plugin->init($service);
             }
         }
     }
 
-    public function registerAuthenticationPlugin(AuthenticationPluginInterface $plugin)
+    public function register(AuthenticationPluginInterface $plugin, $friendlyName)
     {
-        $this->plugins[] = $plugin;
+        $this->plugins[$friendlyName] = $plugin;
     }
 
     public function execute(Request $request, array $routeConfig)
     {
         if (0 === count($this->plugins)) {
             // no authentication plugins registered
+            // FIXME: do we need to fail here or continue?
             return;
         }
 
-        foreach ($this->plugins as $plugin) {
+        $checkPlugins = array();
+        if (array_key_exists('only', $routeConfig)) {
+            $checkPlugins[] = $this->plugins[$routeConfig['only']];
+        } else {
+            $checkPlugins = $this->plugins;
+        }
+
+        foreach ($checkPlugins as $plugin) {
             // first check to see if it is an attempt based on Request
             if ($plugin->isAttempt($request)) {
                 // it is an attempt, so it MUST succeed
@@ -68,6 +76,7 @@ class AuthenticationPlugin implements ServicePluginInterface
             }
         }
 
+        // check if authentication is optional
         if (array_key_exists('requireAuth', $routeConfig)) {
             if (!$routeConfig['requireAuth']) {
                 return;
@@ -79,7 +88,7 @@ class AuthenticationPlugin implements ServicePluginInterface
             'credentials must be provided'
         );
 
-        foreach ($this->plugins as $plugin) {
+        foreach ($checkPlugins as $plugin) {
             $e->addScheme($plugin->getScheme(), $plugin->getAuthParams());
         }
 

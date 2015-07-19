@@ -43,8 +43,8 @@ class AuthenticationPluginTest extends PHPUnit_Framework_TestCase
             $bearer->method('init')->willReturn(null);
             $bearer->method('getAuthParams')->willReturn(array('realm' => 'Bearer Foo'));
 
-            $auth->registerAuthenticationPlugin($basic);
-            $auth->registerAuthenticationPlugin($bearer);
+            $auth->register($basic, 'basic');
+            $auth->register($bearer, 'bearer');
             $auth->init($service);
 
             $request = new Request(
@@ -114,7 +114,7 @@ class AuthenticationPluginTest extends PHPUnit_Framework_TestCase
         $basic->method('getAuthParams')->willReturn(array('realm' => 'Basic Foo'));
         $basic->method('execute')->willReturn($basicUserInfo);
 
-        $auth->registerAuthenticationPlugin($basic);
+        $auth->register($basic, 'basic');
 
         $this->assertEquals('foo', $auth->execute($request, array())->getUserId());
     }
