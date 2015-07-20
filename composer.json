@@ -18,5 +18,12 @@
         "ext-spl": "*",
         "fkooman/rest": "^1.0.0",
         "php": ">=5.4"
+    },
+    "suggest": {
+        "fkooman/rest-plugin-authentication-basic": "Basic Authentication plugin",
+        "fkooman/rest-plugin-authentication-bearer": "Bearer (OAuth) Authentication plugin",
+        "fkooman/rest-plugin-authentication-indieauth": "IndieAuth Authentication plugin",
+        "fkooman/rest-plugin-authentication-mellon": "Mellon (SAML) Authentication plugin",
+        "fkooman/rest-plugin-authentication-tls": "TLS Client Certificate Authentication plugin"
     }
 }
