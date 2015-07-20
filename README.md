@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/fkooman/php-lib-rest-plugin-authentication.svg)](https://travis-ci.org/fkooman/php-lib-rest-plugin-authentication)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/fkooman/php-lib-rest-plugin-authentication/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/fkooman/php-lib-rest-plugin-authentication/?branch=master)
+
 # Introduction
 This is an authentication plugin for `fkooman/rest`.
 
