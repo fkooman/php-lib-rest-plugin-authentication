@@ -76,8 +76,8 @@ class AuthenticationPlugin implements ServicePluginInterface
         }
 
         // check if authentication is optional
-        if (array_key_exists('requireAuth', $routeConfig)) {
-            if (!$routeConfig['requireAuth']) {
+        if (array_key_exists('require', $routeConfig)) {
+            if (!$routeConfig['require']) {
                 return;
             }
         }

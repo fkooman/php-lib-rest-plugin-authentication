@@ -200,4 +200,33 @@ class AuthenticationPluginTest extends PHPUnit_Framework_TestCase
 
         $this->assertSame('bar', $auth->execute($request, array('or' => array('one', 'two')))->getUserId());
     }
+
+    public function testOptionalAuth()
+    {
+        $request = new Request(
+            array(
+                'SERVER_NAME' => 'www.example.org',
+                'SERVER_PORT' => 80,
+                'QUERY_STRING' => '',
+                'REQUEST_URI' => '/',
+                'SCRIPT_NAME' => '/index.php',
+                'REQUEST_METHOD' => 'GET',
+            )
+        );
+
+        $auth = new AuthenticationPlugin();
+
+        $userOne = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\UserInfoInterface')->getMock();
+        $userOne->method('getUserId')->willReturn('foo');
+
+        $one = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
+        $one->method('isAttempt')->willReturn(false);
+        $one->method('getScheme')->willReturn('Basic');
+        $one->method('getAuthParams')->willReturn(array('realm' => 'Basic Foo'));
+        $one->method('execute')->willReturn($userOne);
+
+        $auth->register($one, 'one');
+
+        $this->assertNull($auth->execute($request, array('require' => false)));
+    }
 }

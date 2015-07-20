@@ -68,4 +68,9 @@ To install the additional plugins:
 
     $ composer require fkooman/rest-plugin-authentication-<name>
 
-That is all! :)
+# Development
+It is quite easy to develop your own plugin. Authentication plugins can for
+example also register endpoints in your REST application to e.g. receive 
+authorization codes.
+
+Check the code of the existing plugins to get inspiration :-)
