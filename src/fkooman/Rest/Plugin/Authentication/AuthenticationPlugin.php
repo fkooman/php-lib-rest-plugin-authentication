@@ -48,30 +48,34 @@ class AuthenticationPlugin implements ServicePluginInterface
         $this->plugins[$friendlyName] = $plugin;
     }
 
+    private function getActiveList(array $routeConfig)
+    {
+        if (!array_key_exists('activate', $routeConfig)) {
+            return array_keys($this->plugins);
+        }
+
+        foreach (array_keys($this->plugins) as $friendlyName) {
+            if (in_array($friendlyName, $routeConfig['activate'])) {
+                $active[] = $friendlyName;
+            }
+        }
+
+        return $active;
+    }
+
     public function execute(Request $request, array $routeConfig)
     {
-        if (0 === count($this->plugins)) {
-            throw new RuntimeException('no authentication plugins registered');
+        $activeList = $this->getActiveList($routeConfig);
+
+        if (0 === count($activeList)) {
+            throw new RuntimeException('no active authentication plugins for this route');
         }
 
-        $checkPlugins = array();
-        if (array_key_exists('only', $routeConfig)) {
-            // only ONE mechanism is supported for this route
-            $checkPlugins[] = $this->plugins[$routeConfig['only']];
-        } elseif (array_key_exists('or', $routeConfig)) {
-            // a number of mechanisms is supported for this route
-            foreach ($routeConfig['or'] as $o) {
-                $checkPlugins[] = $this->plugins[$o];
-            }
-        } else {
-            $checkPlugins = $this->plugins;
-        }
-
-        foreach ($checkPlugins as $plugin) {
+        foreach ($activeList as $friendlyName) {
             // first check to see if it is an attempt based on Request
-            if ($plugin->isAttempt($request)) {
+            if ($this->plugins[$friendlyName]->isAttempt($request)) {
                 // it is an attempt, so it MUST succeed
-                return $plugin->execute($request, array());
+                return $this->plugins[$friendlyName]->execute($request, array());
             }
         }
 
@@ -87,8 +91,11 @@ class AuthenticationPlugin implements ServicePluginInterface
             'credentials must be provided'
         );
 
-        foreach ($checkPlugins as $plugin) {
-            $e->addScheme($plugin->getScheme(), $plugin->getAuthParams());
+        foreach ($activeList as $friendlyName) {
+            $e->addScheme(
+                $this->plugins[$friendlyName]->getScheme(),
+                $this->plugins[$friendlyName]->getAuthParams()
+            );
         }
 
         throw $e;

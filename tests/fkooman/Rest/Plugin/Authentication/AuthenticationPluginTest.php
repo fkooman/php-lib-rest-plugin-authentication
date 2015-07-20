@@ -18,7 +18,6 @@
 
 namespace fkooman\Rest\Plugin\Authentication;
 
-use fkooman\Rest\Service;
 use fkooman\Http\Request;
 use PHPUnit_Framework_TestCase;
 use fkooman\Http\Exception\UnauthorizedException;
@@ -28,44 +27,17 @@ class AuthenticationPluginTest extends PHPUnit_Framework_TestCase
     public function testNoAuthenticationAttemptWithTwoRegisteredMethods()
     {
         try {
-            $service = new Service();
             $auth = new AuthenticationPlugin();
-
-            $basic = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
-            $basic->method('isAttempt')->willReturn(false);
-            $basic->method('getScheme')->willReturn('Basic');
-            $basic->method('init')->willReturn(null);
-            $basic->method('getAuthParams')->willReturn(array('realm' => 'Basic Foo'));
-
-            $bearer = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
-            $bearer->method('isAttempt')->willReturn(false);
-            $bearer->method('getScheme')->willReturn('Bearer');
-            $bearer->method('init')->willReturn(null);
-            $bearer->method('getAuthParams')->willReturn(array('realm' => 'Bearer Foo'));
-
-            $auth->register($basic, 'basic');
-            $auth->register($bearer, 'bearer');
-            $auth->init($service);
-
-            $request = new Request(
-                array(
-                    'SERVER_NAME' => 'www.example.org',
-                    'SERVER_PORT' => 80,
-                    'QUERY_STRING' => '',
-                    'REQUEST_URI' => '/',
-                    'SCRIPT_NAME' => '/index.php',
-                    'REQUEST_METHOD' => 'GET',
-                )
-            );
-
-            $auth->execute($request, array());
+            $auth->register($this->getNoAttemptPlugin('One'), 'one');
+            $auth->register($this->getNoAttemptPlugin('Two'), 'two');
+            $auth->execute($this->getRequest(), array());
             $this->assertTrue(false);
         } catch (UnauthorizedException $e) {
             $this->assertEquals(
                 array(
                     'HTTP/1.1 401 Unauthorized',
                     'Content-Type: application/json',
-                    'Www-Authenticate: Basic realm="Basic Foo", Bearer realm="Bearer Foo"',
+                    'Www-Authenticate: One realm="Foo", Two realm="Foo"',
                     '',
                     '{"error":"no_credentials","error_description":"credentials must be provided"}',
                 ),
@@ -76,134 +48,79 @@ class AuthenticationPluginTest extends PHPUnit_Framework_TestCase
 
     /**
      * @expectedException RuntimeException
-     * @expectedExceptionMessage no authentication plugins registered
+     * @expectedExceptionMessage no active authentication plugins for this route
      */
     public function testNoAuthPlugins()
     {
-        $request = new Request(
-            array(
-                'SERVER_NAME' => 'www.example.org',
-                'SERVER_PORT' => 80,
-                'QUERY_STRING' => '',
-                'REQUEST_URI' => '/',
-                'SCRIPT_NAME' => '/index.php',
-                'REQUEST_METHOD' => 'GET',
-            )
-        );
         $auth = new AuthenticationPlugin();
-        $auth->execute($request, array());
+        $auth->execute(
+            $this->getRequest(),
+            array()
+        );
     }
 
     public function testAuthAttempt()
     {
-        $request = new Request(
-            array(
-                'SERVER_NAME' => 'www.example.org',
-                'SERVER_PORT' => 80,
-                'QUERY_STRING' => '',
-                'REQUEST_URI' => '/',
-                'SCRIPT_NAME' => '/index.php',
-                'REQUEST_METHOD' => 'GET',
-            )
-        );
-
         $auth = new AuthenticationPlugin();
-
-        $basicUserInfo = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\UserInfoInterface')->getMock();
-        $basicUserInfo->method('getUserId')->willReturn('foo');
-
-        $basic = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
-        $basic->method('isAttempt')->willReturn(true);
-        $basic->method('getScheme')->willReturn('Basic');
-        $basic->method('getAuthParams')->willReturn(array('realm' => 'Basic Foo'));
-        $basic->method('execute')->willReturn($basicUserInfo);
-
-        $auth->register($basic, 'basic');
-
-        $this->assertEquals('foo', $auth->execute($request, array())->getUserId());
+        $auth->register($this->getSuccessfulAttemptPlugin(), 'one');
+        $this->assertEquals(
+            'foo',
+            $auth->execute(
+                $this->getRequest(),
+                array()
+            )->getUserId()
+        );
     }
 
-    public function testOnly()
+    public function testActiveOne()
     {
-        $request = new Request(
-            array(
-                'SERVER_NAME' => 'www.example.org',
-                'SERVER_PORT' => 80,
-                'QUERY_STRING' => '',
-                'REQUEST_URI' => '/',
-                'SCRIPT_NAME' => '/index.php',
-                'REQUEST_METHOD' => 'GET',
-            )
-        );
-
         $auth = new AuthenticationPlugin();
+        $auth->register($this->getSuccessfulAttemptPlugin('foo'), 'one');
+        $auth->register($this->getSuccessfulAttemptPlugin('foobar'), 'two');
 
-        $userOne = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\UserInfoInterface')->getMock();
-        $userOne->method('getUserId')->willReturn('foo');
-
-        $userTwo = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\UserInfoInterface')->getMock();
-        $userTwo->method('getUserId')->willReturn('bar');
-
-        $one = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
-        $one->method('isAttempt')->willReturn(true);
-        $one->method('getScheme')->willReturn('Basic');
-        $one->method('getAuthParams')->willReturn(array('realm' => 'Basic Foo'));
-        $one->method('execute')->willReturn($userOne);
-
-        $two = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
-        $two->method('isAttempt')->willReturn(true);
-        $two->method('getScheme')->willReturn('Basic');
-        $two->method('getAuthParams')->willReturn(array('realm' => 'Basic Foo'));
-        $two->method('execute')->willReturn($userTwo);
-
-        $auth->register($one, 'one');
-        $auth->register($two, 'two');
-
-        $this->assertSame('bar', $auth->execute($request, array('only' => 'two'))->getUserId());
+        $this->assertSame(
+            'foobar',
+            $auth->execute(
+                $this->getRequest(),
+                array(
+                    'activate' => array('two'),
+                )
+            )->getUserId()
+        );
     }
 
-    public function testOr()
+    public function testActiveTwo()
     {
-        $request = new Request(
-            array(
-                'SERVER_NAME' => 'www.example.org',
-                'SERVER_PORT' => 80,
-                'QUERY_STRING' => '',
-                'REQUEST_URI' => '/',
-                'SCRIPT_NAME' => '/index.php',
-                'REQUEST_METHOD' => 'GET',
-            )
-        );
-
         $auth = new AuthenticationPlugin();
-
-        $userOne = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\UserInfoInterface')->getMock();
-        $userOne->method('getUserId')->willReturn('foo');
-
-        $userTwo = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\UserInfoInterface')->getMock();
-        $userTwo->method('getUserId')->willReturn('bar');
-
-        $one = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
-        $one->method('isAttempt')->willReturn(false);
-        $one->method('getScheme')->willReturn('Basic');
-        $one->method('getAuthParams')->willReturn(array('realm' => 'Basic Foo'));
-        $one->method('execute')->willReturn($userOne);
-
-        $two = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
-        $two->method('isAttempt')->willReturn(true);
-        $two->method('getScheme')->willReturn('Basic');
-        $two->method('getAuthParams')->willReturn(array('realm' => 'Basic Foo'));
-        $two->method('execute')->willReturn($userTwo);
-
-        $auth->register($one, 'one');
-        $auth->register($two, 'two');
-
-        $this->assertSame('bar', $auth->execute($request, array('or' => array('one', 'two')))->getUserId());
+        $auth->register($this->getNoAttemptPlugin(), 'one');
+        $auth->register($this->getSuccessfulAttemptPlugin('foobar'), 'two');
+        $auth->register($this->getSuccessfulAttemptPlugin('xyz'), 'three');
+        $this->assertSame(
+            'foobar',
+            $auth->execute(
+                $this->getRequest(),
+                array(
+                    'activate' => array('one', 'two'),
+                )
+            )->getUserId()
+        );
     }
 
     public function testOptionalAuth()
     {
-        $request = new Request(
+        $auth = new AuthenticationPlugin();
+        $auth->register($this->getNoAttemptPlugin(), 'one');
+        $this->assertNull(
+            $auth->execute(
+                $this->getRequest(),
+                array('require' => false)
+            )
+        );
+    }
+
+    private function getRequest()
+    {
+        return new Request(
             array(
                 'SERVER_NAME' => 'www.example.org',
                 'SERVER_PORT' => 80,
@@ -213,20 +130,48 @@ class AuthenticationPluginTest extends PHPUnit_Framework_TestCase
                 'REQUEST_METHOD' => 'GET',
             )
         );
+    }
 
-        $auth = new AuthenticationPlugin();
+    private function getSuccessfulAttemptPlugin($userId = 'foo')
+    {
+        $userInfo = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\UserInfoInterface')->getMock();
+        $userInfo->method('getUserId')->willReturn($userId);
 
-        $userOne = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\UserInfoInterface')->getMock();
-        $userOne->method('getUserId')->willReturn('foo');
+        $plugin = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
+        $plugin->method('isAttempt')->willReturn(true);
+        $plugin->method('getScheme')->willReturn('Basic');
+        $plugin->method('getAuthParams')->willReturn(array('realm' => 'Basic Foo'));
+        $plugin->method('execute')->willReturn($userInfo);
 
-        $one = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
-        $one->method('isAttempt')->willReturn(false);
-        $one->method('getScheme')->willReturn('Basic');
-        $one->method('getAuthParams')->willReturn(array('realm' => 'Basic Foo'));
-        $one->method('execute')->willReturn($userOne);
+        return $plugin;
+    }
 
-        $auth->register($one, 'one');
+    private function getNoAttemptPlugin($scheme = 'Basic')
+    {
+        $plugin = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
+        $plugin->method('isAttempt')->willReturn(false);
+        $plugin->method('getScheme')->willReturn($scheme);
+        $plugin->method('getAuthParams')->willReturn(array('realm' => 'Foo'));
+        $plugin->method('execute')->willReturn(null);
 
-        $this->assertNull($auth->execute($request, array('require' => false)));
+        return $plugin;
+    }
+
+    private function getFailedAttemptPlugin($scheme = 'Basic')
+    {
+        $plugin = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
+        $plugin->method('isAttempt')->willReturn(true);
+        $plugin->method('getScheme')->willReturn($scheme);
+        $plugin->method('getAuthParams')->willReturn(array('realm' => 'Foo'));
+
+        $e = new UnauthorizedException(
+            'invalid_credentials',
+            'provided credentials not valid'
+        );
+        $e->addScheme($scheme, $plugin->getAuthParams());
+
+        $plugin->method('execute')->will($this->throwException($e));
+
+        return $plugin;
     }
 }

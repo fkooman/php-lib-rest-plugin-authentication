@@ -7,18 +7,18 @@ This is an authentication plugin for `fkooman/rest`.
 # Features
 This plugin supports various authentication backends:
 
-* Basic (`fkooman/rest-plugin-basic`)
-* Bearer (`fkooman/rest-plugin-bearer`)
-* Tls (`fkooman/rest-plugin-tls`)
-* Mellon (`fkooman/rest-plugin-mellon`)
-* IndieAuth (`fkooman/rest-plugin-indieauth`)
+* Basic (`fkooman/rest-plugin-authentication-basic`)
+* Bearer (`fkooman/rest-plugin-authentication-bearer`)
+* Tls (`fkooman/rest-plugin-authentication-tls`)
+* Mellon (`fkooman/rest-plugin-authentication-mellon`)
+* IndieAuth (`fkooman/rest-plugin-authentication-indieauth`)
 
 Furthermore it allows you the ability to allow for multiple authentication 
-methods supported on one endpoint, e.g. support both `Basic` and `Bearer` 
-authentication on one endpoint:
+methods supported on one route, e.g. support both `Basic` and `Bearer` 
+authentication:
 
     $userAuth = new BasicAuthentication(...);
-    $clientAuth = new BasicAuthentication(...);
+    $clientAuth = new BearerAuthentication(...);
 
     $authenticationPlugin->register($userAuth, 'user');
     $authenticationPlugin->register($clientAuth, 'client');
@@ -32,14 +32,14 @@ authentication on one endpoint:
         },
         array(
             'fkooman\Rest\Plugin\Authentication\AuthenticationPlugin' => array(
-                'or' => array('user', 'client')
+                'activate' => array('user', 'client')
             )
         )
     );
 
 It also allows you to register multiple authentication backends of the same
-type with different configurations for different endpoints. For example to 
-allow Basic authentication on two endpoints, but with different user and 
+type with different configurations for different routes. For example to 
+allow Basic authentication on two routes, but with different user and 
 password databases:
 
     $userAuth = new BasicAuthentication(...);
@@ -51,13 +51,27 @@ password databases:
     ...
 
     $this->get(
-        '/',
+        '/user',
         function() {
-            return 'Hello World!';
+            return 'Hello User!';
         },
         array(
             'fkooman\Rest\Plugin\Authentication\AuthenticationPlugin' => array(
-                'only' => array('user')
+                'activate' => array('user')
+            )
+        )
+    );
+
+    ...
+
+    $this->get(
+        '/client',
+        function() {
+            return 'Hello Client!';
+        },
+        array(
+            'fkooman\Rest\Plugin\Authentication\AuthenticationPlugin' => array(
+                'activate' => array('client')
             )
         )
     );
