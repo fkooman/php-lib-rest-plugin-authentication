@@ -22,13 +22,8 @@ use fkooman\Http\Exception\UnauthorizedException;
 use fkooman\Http\Request;
 use fkooman\Rest\Service;
 use fkooman\Rest\ServicePluginInterface;
+use RuntimeException;
 
-/**
- * Authentication Plugin to implement supporting multiple authentication
- * mechanisms. For example allow both Basic and Bearer authentication. The
- * authentication mechanisms will be tried one by one in the order they were
- * registered. At least one needs to be valid.
- */
 class AuthenticationPlugin implements ServicePluginInterface
 {
     /** @var array */
@@ -56,14 +51,18 @@ class AuthenticationPlugin implements ServicePluginInterface
     public function execute(Request $request, array $routeConfig)
     {
         if (0 === count($this->plugins)) {
-            // no authentication plugins registered
-            // FIXME: do we need to fail here or continue?
-            return;
+            throw new RuntimeException('no authentication plugins registered');
         }
 
         $checkPlugins = array();
         if (array_key_exists('only', $routeConfig)) {
+            // only ONE mechanism is supported for this route
             $checkPlugins[] = $this->plugins[$routeConfig['only']];
+        } elseif (array_key_exists('or', $routeConfig)) {
+            // a number of mechanisms is supported for this route
+            foreach ($routeConfig['or'] as $o) {
+                $checkPlugins[] = $this->plugins[$o];
+            }
         } else {
             $checkPlugins = $this->plugins;
         }

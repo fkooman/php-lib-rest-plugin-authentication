@@ -74,7 +74,11 @@ class AuthenticationPluginTest extends PHPUnit_Framework_TestCase
         }
     }
 
-    public function testNoAuthRequired()
+    /**
+     * @expectedException RuntimeException
+     * @expectedExceptionMessage no authentication plugins registered
+     */
+    public function testNoAuthPlugins()
     {
         $request = new Request(
             array(
@@ -87,7 +91,7 @@ class AuthenticationPluginTest extends PHPUnit_Framework_TestCase
             )
         );
         $auth = new AuthenticationPlugin();
-        $this->assertNull($auth->execute($request, array('requireAuth' => false)));
+        $auth->execute($request, array());
     }
 
     public function testAuthAttempt()
