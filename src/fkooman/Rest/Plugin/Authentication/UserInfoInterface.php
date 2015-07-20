@@ -21,7 +21,7 @@ namespace fkooman\Rest\Plugin\Authentication;
 interface UserInfoInterface
 {
     /**
-     * Gets the unique user identifier.
+     * Gets the unique user identifier of the authenticated user.
      *
      * @return string the user identifier
      */

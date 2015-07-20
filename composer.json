@@ -21,11 +21,11 @@
         "ext-openssl": "*",
         "ext-pcre": "*",
         "ext-spl": "*",
-        "fkooman/base64": "~1.0.0",
-        "fkooman/cert-parser": "~1.0.0",
-        "fkooman/rest": "dev-master",
-        "guzzlehttp/guzzle": "~5.3",
-        "ircmaxell/password-compat": "~1.0",
-        "php": ">=5.3.3"
+        "fkooman/base64": "^1.0.0",
+        "fkooman/cert-parser": "^1.0.0",
+        "fkooman/rest": "^1.0.0",
+        "guzzlehttp/guzzle": "^5.3",
+        "php": ">=5.3.3",
+        "ircmaxell/password-compat": "^1.0"
     }
 }
