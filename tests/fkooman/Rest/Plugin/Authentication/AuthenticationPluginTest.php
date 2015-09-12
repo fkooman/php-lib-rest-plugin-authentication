@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 namespace fkooman\Rest\Plugin\Authentication;
 
 use fkooman\Http\Request;
@@ -135,13 +134,13 @@ class AuthenticationPluginTest extends PHPUnit_Framework_TestCase
     private function getSuccessfulAttemptPlugin($userId = 'foo')
     {
         $userInfo = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\UserInfoInterface')->getMock();
-        $userInfo->method('getUserId')->willReturn($userId);
+        $userInfo->expects($this->any())->method('getUserId')->will($this->returnValue($userId));
 
         $plugin = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
-        $plugin->method('isAttempt')->willReturn(true);
-        $plugin->method('getScheme')->willReturn('Basic');
-        $plugin->method('getAuthParams')->willReturn(array('realm' => 'Basic Foo'));
-        $plugin->method('execute')->willReturn($userInfo);
+        $plugin->expects($this->any())->method('isAttempt')->will($this->returnValue(true));
+        $plugin->expects($this->any())->method('getScheme')->will($this->returnValue('Basic'));
+        $plugin->expects($this->any())->method('getAuthParams')->will($this->returnValue(array('realm' => 'Basic Foo')));
+        $plugin->expects($this->any())->method('execute')->will($this->returnValue($userInfo));
 
         return $plugin;
     }
@@ -149,10 +148,10 @@ class AuthenticationPluginTest extends PHPUnit_Framework_TestCase
     private function getNoAttemptPlugin($scheme = 'Basic')
     {
         $plugin = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
-        $plugin->method('isAttempt')->willReturn(false);
-        $plugin->method('getScheme')->willReturn($scheme);
-        $plugin->method('getAuthParams')->willReturn(array('realm' => 'Foo'));
-        $plugin->method('execute')->willReturn(null);
+        $plugin->expects($this->any())->method('isAttempt')->will($this->returnValue(false));
+        $plugin->expects($this->any())->method('getScheme')->will($this->returnValue($scheme));
+        $plugin->expects($this->any())->method('getAuthParams')->will($this->returnValue(array('realm' => 'Foo')));
+        $plugin->expects($this->any())->method('execute')->will($this->returnValue(null));
 
         return $plugin;
     }
@@ -160,9 +159,9 @@ class AuthenticationPluginTest extends PHPUnit_Framework_TestCase
     private function getFailedAttemptPlugin($scheme = 'Basic')
     {
         $plugin = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
-        $plugin->method('isAttempt')->willReturn(true);
-        $plugin->method('getScheme')->willReturn($scheme);
-        $plugin->method('getAuthParams')->willReturn(array('realm' => 'Foo'));
+        $plugin->expects($this->any())->method('isAttempt')->will($this->returnValue(true));
+        $plugin->expects($this->any())->method('getScheme')->will($this->returnValue($scheme));
+        $plugin->expects($this->any())->method('getAuthParams')->will($this->returnValue(array('realm' => 'Foo')));
 
         $e = new UnauthorizedException(
             'invalid_credentials',
