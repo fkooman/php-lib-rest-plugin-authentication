@@ -53,6 +53,7 @@ class AuthenticationPlugin implements ServicePluginInterface
             return array_keys($this->plugins);
         }
 
+        $active = array();
         foreach (array_keys($this->plugins) as $friendlyName) {
             if (in_array($friendlyName, $routeConfig['activate'])) {
                 $active[] = $friendlyName;
