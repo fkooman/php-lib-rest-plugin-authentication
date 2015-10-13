@@ -36,6 +36,7 @@ class AuthenticationPluginTest extends PHPUnit_Framework_TestCase
                 array(
                     'HTTP/1.1 401 Unauthorized',
                     'Content-Type: application/json',
+                    'Content-Length: 77',
                     'Www-Authenticate: One realm="Foo", Two realm="Foo"',
                     '',
                     '{"error":"no_credentials","error_description":"credentials must be provided"}',
