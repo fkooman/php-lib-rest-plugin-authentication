@@ -22,6 +22,7 @@
     "suggest": {
         "fkooman/rest-plugin-authentication-basic": "Basic Authentication plugin",
         "fkooman/rest-plugin-authentication-bearer": "Bearer (OAuth) Authentication plugin",
+        "fkooman/rest-plugin-authentication-form": "HTML Form Authentication Plugin",
         "fkooman/rest-plugin-authentication-indieauth": "IndieAuth Authentication plugin",
         "fkooman/rest-plugin-authentication-mellon": "Mellon (SAML) Authentication plugin",
         "fkooman/rest-plugin-authentication-tls": "TLS Client Certificate Authentication plugin"
