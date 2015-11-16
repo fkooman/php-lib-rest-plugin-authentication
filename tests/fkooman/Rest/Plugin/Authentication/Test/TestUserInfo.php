@@ -15,26 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace fkooman\Rest\Plugin\Authentication;
+namespace fkooman\Rest\Plugin\Authentication\Test;
 
-use fkooman\Http\Request;
-use fkooman\Rest\Service;
+use fkooman\Rest\Plugin\Authentication\UserInfoInterface;
 
-interface AuthenticationPluginInterface
+class TestUserInfo implements UserInfoInterface
 {
-    /**
-     * @return mixed false when not authenticated, UserInfoInterface when 
-     *               authenticated.
-     */
-    public function isAuthenticated(Request $request);
+    /** @var string */
+    private $userId;
 
-    /**
-     * return response 401 or show html page or something.
-     */
-    public function requestAuthentication();
+    public function __construct($userId)
+    {
+        $this->userId = $userId;
+    }
 
-    /**
-     * Init, maybe register URL callbacks etc.
-     */
-    public function init(Service $service);
+    public function getUserId()
+    {
+        return $this->userId;
+    }
 }

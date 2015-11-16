@@ -17,161 +17,138 @@
  */
 namespace fkooman\Rest\Plugin\Authentication;
 
+require_once __DIR__.'/Test/TestAuthentication.php';
+require_once __DIR__.'/Test/TestUserInfo.php';
+
 use fkooman\Http\Request;
 use PHPUnit_Framework_TestCase;
-use fkooman\Http\Exception\UnauthorizedException;
+use fkooman\Rest\Plugin\Authentication\Test\TestAuthentication;
+use fkooman\Rest\Service;
 
 class AuthenticationPluginTest extends PHPUnit_Framework_TestCase
 {
-    public function testNoAuthenticationAttemptWithTwoRegisteredMethods()
+    public function testSimpleAuthenticated()
     {
-        try {
-            $auth = new AuthenticationPlugin();
-            $auth->register($this->getNoAttemptPlugin('One'), 'one');
-            $auth->register($this->getNoAttemptPlugin('Two'), 'two');
-            $auth->execute($this->getRequest(), array());
-            $this->assertTrue(false);
-        } catch (UnauthorizedException $e) {
-            $this->assertEquals(
-                array(
-                    'HTTP/1.1 401 Unauthorized',
-                    'Content-Type: application/json',
-                    'Content-Length: 77',
-                    'Www-Authenticate: One realm="Foo", Two realm="Foo"',
-                    '',
-                    '{"error":"no_credentials","error_description":"credentials must be provided"}',
-                ),
-                $e->getJsonResponse()->toArray()
-            );
-        }
-    }
-
-    /**
-     * @expectedException RuntimeException
-     * @expectedExceptionMessage no active authentication plugins for this route
-     */
-    public function testNoAuthPlugins()
-    {
-        $auth = new AuthenticationPlugin();
-        $auth->execute(
-            $this->getRequest(),
-            array()
-        );
-    }
-
-    public function testAuthAttempt()
-    {
-        $auth = new AuthenticationPlugin();
-        $auth->register($this->getSuccessfulAttemptPlugin(), 'one');
-        $this->assertEquals(
-            'foo',
-            $auth->execute(
-                $this->getRequest(),
-                array()
-            )->getUserId()
-        );
-    }
-
-    public function testActiveOne()
-    {
-        $auth = new AuthenticationPlugin();
-        $auth->register($this->getSuccessfulAttemptPlugin('foo'), 'one');
-        $auth->register($this->getSuccessfulAttemptPlugin('foobar'), 'two');
-
-        $this->assertSame(
-            'foobar',
-            $auth->execute(
-                $this->getRequest(),
-                array(
-                    'activate' => array('two'),
-                )
-            )->getUserId()
-        );
-    }
-
-    public function testActiveTwo()
-    {
-        $auth = new AuthenticationPlugin();
-        $auth->register($this->getNoAttemptPlugin(), 'one');
-        $auth->register($this->getSuccessfulAttemptPlugin('foobar'), 'two');
-        $auth->register($this->getSuccessfulAttemptPlugin('xyz'), 'three');
-        $this->assertSame(
-            'foobar',
-            $auth->execute(
-                $this->getRequest(),
-                array(
-                    'activate' => array('one', 'two'),
-                )
-            )->getUserId()
-        );
-    }
-
-    public function testOptionalAuth()
-    {
-        $auth = new AuthenticationPlugin();
-        $auth->register($this->getNoAttemptPlugin(), 'one');
-        $this->assertNull(
-            $auth->execute(
-                $this->getRequest(),
-                array('require' => false)
-            )
-        );
-    }
-
-    private function getRequest()
-    {
-        return new Request(
-            array(
+        $request = new Request(
+             array(
                 'SERVER_NAME' => 'www.example.org',
                 'SERVER_PORT' => 80,
                 'QUERY_STRING' => '',
                 'REQUEST_URI' => '/',
                 'SCRIPT_NAME' => '/index.php',
                 'REQUEST_METHOD' => 'GET',
+                'HTTP_AUTHORIZATION' => 'Test foo',
+            )
+        );
+
+        $a = new AuthenticationPlugin();
+        $a->register(new TestAuthentication(), 'test');
+        $a->init(new Service());
+        $this->assertSame('foo', $a->execute($request, array())->getUserId());
+    }
+
+    /**
+     * @expectedException fkooman\Http\Exception\UnauthorizedException
+     * @expectedExceptionMessage no_credentials
+     */
+    public function testSimpleNotAuthenticated()
+    {
+        $request = new Request(
+             array(
+                'SERVER_NAME' => 'www.example.org',
+                'SERVER_PORT' => 80,
+                'QUERY_STRING' => '',
+                'REQUEST_URI' => '/',
+                'SCRIPT_NAME' => '/index.php',
+                'REQUEST_METHOD' => 'GET',
+                'HTTP_AUTHORIZATION' => 'Test bar',
+            )
+        );
+
+        $a = new AuthenticationPlugin();
+        $a->register(new TestAuthentication(), 'test');
+        $a->init(new Service());
+        $a->execute($request, array());
+    }
+
+    public function testSimpleNotAuthenticatedNotRequired()
+    {
+        $request = new Request(
+             array(
+                'SERVER_NAME' => 'www.example.org',
+                'SERVER_PORT' => 80,
+                'QUERY_STRING' => '',
+                'REQUEST_URI' => '/',
+                'SCRIPT_NAME' => '/index.php',
+                'REQUEST_METHOD' => 'GET',
+                'HTTP_AUTHORIZATION' => 'Test bar',
+            )
+        );
+
+        $a = new AuthenticationPlugin();
+        $a->register(new TestAuthentication(), 'test');
+        $a->init(new Service());
+        $this->assertNull(
+            $a->execute(
+                $request,
+                array(
+                    'require' => false,
+                )
             )
         );
     }
 
-    private function getSuccessfulAttemptPlugin($userId = 'foo')
+    public function testSimpleAuthenticatedActivate()
     {
-        $userInfo = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\UserInfoInterface')->getMock();
-        $userInfo->expects($this->any())->method('getUserId')->will($this->returnValue($userId));
-
-        $plugin = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
-        $plugin->expects($this->any())->method('isAttempt')->will($this->returnValue(true));
-        $plugin->expects($this->any())->method('getScheme')->will($this->returnValue('Basic'));
-        $plugin->expects($this->any())->method('getAuthParams')->will($this->returnValue(array('realm' => 'Basic Foo')));
-        $plugin->expects($this->any())->method('execute')->will($this->returnValue($userInfo));
-
-        return $plugin;
-    }
-
-    private function getNoAttemptPlugin($scheme = 'Basic')
-    {
-        $plugin = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
-        $plugin->expects($this->any())->method('isAttempt')->will($this->returnValue(false));
-        $plugin->expects($this->any())->method('getScheme')->will($this->returnValue($scheme));
-        $plugin->expects($this->any())->method('getAuthParams')->will($this->returnValue(array('realm' => 'Foo')));
-        $plugin->expects($this->any())->method('execute')->will($this->returnValue(null));
-
-        return $plugin;
-    }
-
-    private function getFailedAttemptPlugin($scheme = 'Basic')
-    {
-        $plugin = $this->getMockBuilder('fkooman\Rest\Plugin\Authentication\AuthenticationPluginInterface')->getMock();
-        $plugin->expects($this->any())->method('isAttempt')->will($this->returnValue(true));
-        $plugin->expects($this->any())->method('getScheme')->will($this->returnValue($scheme));
-        $plugin->expects($this->any())->method('getAuthParams')->will($this->returnValue(array('realm' => 'Foo')));
-
-        $e = new UnauthorizedException(
-            'invalid_credentials',
-            'provided credentials not valid'
+        $request = new Request(
+             array(
+                'SERVER_NAME' => 'www.example.org',
+                'SERVER_PORT' => 80,
+                'QUERY_STRING' => '',
+                'REQUEST_URI' => '/',
+                'SCRIPT_NAME' => '/index.php',
+                'REQUEST_METHOD' => 'GET',
+                'HTTP_AUTHORIZATION' => 'Test foo',
+            )
         );
-        $e->addScheme($scheme, $plugin->getAuthParams());
 
-        $plugin->method('execute')->will($this->throwException($e));
+        $a = new AuthenticationPlugin();
+        $a->register(new TestAuthentication(), 'test');
+        $a->init(new Service());
+        $this->assertSame(
+            'foo',
+            $a->execute(
+                $request,
+                array(
+                    'activate' => array('test'),
+                )
+            )->getUserId()
+        );
+    }
 
-        return $plugin;
+    /**
+     * @expectedException RuntimeException
+     * @expectedExceptionMessage plugin not registered
+     */
+    public function testSimpleUnregisteredPlugin()
+    {
+        $request = new Request(
+             array(
+                'SERVER_NAME' => 'www.example.org',
+                'SERVER_PORT' => 80,
+                'QUERY_STRING' => '',
+                'REQUEST_URI' => '/',
+                'SCRIPT_NAME' => '/index.php',
+                'REQUEST_METHOD' => 'GET',
+                'HTTP_AUTHORIZATION' => 'Test bar',
+            )
+        );
+
+        $a = new AuthenticationPlugin();
+        $a->register(new TestAuthentication(), 'testa');
+        $a->register(new TestAuthentication(), 'testb');
+        $a->register(new TestAuthentication(), 'testc');
+        $a->init(new Service());
+        $a->execute($request, array('activate' => array('test')));
     }
 }

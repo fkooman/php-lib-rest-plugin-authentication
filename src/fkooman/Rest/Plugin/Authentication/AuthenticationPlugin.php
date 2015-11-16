@@ -17,7 +17,6 @@
  */
 namespace fkooman\Rest\Plugin\Authentication;
 
-use fkooman\Http\Exception\UnauthorizedException;
 use fkooman\Http\Request;
 use fkooman\Rest\Service;
 use fkooman\Rest\ServicePluginInterface;
@@ -36,9 +35,7 @@ class AuthenticationPlugin implements ServicePluginInterface
     public function init(Service $service)
     {
         foreach ($this->plugins as $friendlyName => $plugin) {
-            if (method_exists($plugin, 'init')) {
-                $plugin->init($service);
-            }
+            $plugin->init($service);
         }
     }
 
@@ -47,36 +44,29 @@ class AuthenticationPlugin implements ServicePluginInterface
         $this->plugins[$friendlyName] = $plugin;
     }
 
-    private function getActiveList(array $routeConfig)
-    {
-        if (!array_key_exists('activate', $routeConfig)) {
-            return array_keys($this->plugins);
-        }
-
-        $active = array();
-        foreach (array_keys($this->plugins) as $friendlyName) {
-            if (in_array($friendlyName, $routeConfig['activate'])) {
-                $active[] = $friendlyName;
-            }
-        }
-
-        return $active;
-    }
-
     public function execute(Request $request, array $routeConfig)
     {
-        $activeList = $this->getActiveList($routeConfig);
-
-        if (0 === count($activeList)) {
-            throw new RuntimeException('no active authentication plugins for this route');
+        if (!array_key_exists('activate', $routeConfig)) {
+            // if no plugin is specified here, we assume only one is registered
+            // and use that
+            if (1 !== count($this->plugins)) {
+                throw new RuntimeException('unable to determine the authentication plugin');
+            }
+            $activePlugin = array_values($this->plugins)[0];
+        } else {
+            if (!is_array($routeConfig['activate']) || 1 !== count($routeConfig['activate'])) {
+                throw new RuntimeException('activate key must be array of length 1');
+            }
+            $activate = array_values($routeConfig['activate'])[0];
+            if (!array_key_exists($activate, $this->plugins)) {
+                throw new RuntimeException('plugin not registered');
+            }
+            $activePlugin = $this->plugins[$activate];
         }
 
-        foreach ($activeList as $friendlyName) {
-            // first check to see if it is an attempt based on Request
-            if ($this->plugins[$friendlyName]->isAttempt($request)) {
-                // it is an attempt, so it MUST succeed
-                return $this->plugins[$friendlyName]->execute($request, array());
-            }
+        $isAuthenticated = $activePlugin->isAuthenticated($request);
+        if (false !== $isAuthenticated) {
+            return $isAuthenticated;
         }
 
         // check if authentication is optional
@@ -86,18 +76,6 @@ class AuthenticationPlugin implements ServicePluginInterface
             }
         }
 
-        $e = new UnauthorizedException(
-            'no_credentials',
-            'credentials must be provided'
-        );
-
-        foreach ($activeList as $friendlyName) {
-            $e->addScheme(
-                $this->plugins[$friendlyName]->getScheme(),
-                $this->plugins[$friendlyName]->getAuthParams()
-            );
-        }
-
-        throw $e;
+        return $activePlugin->requestAuthentication();
     }
 }

@@ -12,69 +12,7 @@ This plugin supports various authentication backends:
 * Tls (`fkooman/rest-plugin-authentication-tls`)
 * Mellon (`fkooman/rest-plugin-authentication-mellon`)
 * IndieAuth (`fkooman/rest-plugin-authentication-indieauth`)
-
-Furthermore it allows you the ability to allow for multiple authentication 
-methods supported on one route, e.g. support both `Basic` and `Bearer` 
-authentication:
-
-    $userAuth = new BasicAuthentication(...);
-    $clientAuth = new BearerAuthentication(...);
-
-    $authenticationPlugin->register($userAuth, 'user');
-    $authenticationPlugin->register($clientAuth, 'client');
-
-    ...
-
-    $this->get(
-        '/',
-        function() {
-            return 'Hello World!';
-        },
-        array(
-            'fkooman\Rest\Plugin\Authentication\AuthenticationPlugin' => array(
-                'activate' => array('user', 'client')
-            )
-        )
-    );
-
-It also allows you to register multiple authentication backends of the same
-type with different configurations for different routes. For example to 
-allow Basic authentication on two routes, but with different user and 
-password databases:
-
-    $userAuth = new BasicAuthentication(...);
-    $clientAuth = new BasicAuthentication(...);
-
-    $authenticationPlugin->register($userAuth, 'user');
-    $authenticationPlugin->register($clientAuth, 'client');
-
-    ...
-
-    $this->get(
-        '/user',
-        function() {
-            return 'Hello User!';
-        },
-        array(
-            'fkooman\Rest\Plugin\Authentication\AuthenticationPlugin' => array(
-                'activate' => array('user')
-            )
-        )
-    );
-
-    ...
-
-    $this->get(
-        '/client',
-        function() {
-            return 'Hello Client!';
-        },
-        array(
-            'fkooman\Rest\Plugin\Authentication\AuthenticationPlugin' => array(
-                'activate' => array('client')
-            )
-        )
-    );
+* Form (`fkooman/rest-plugin-authentication-form`)
 
 # Installation
 To install the main plugin:
