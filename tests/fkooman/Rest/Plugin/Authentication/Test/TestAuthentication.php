@@ -37,7 +37,7 @@ class TestAuthentication implements AuthenticationPluginInterface
         return false;
     }
 
-    public function requestAuthentication()
+    public function requestAuthentication(Request $request)
     {
         $e = new UnauthorizedException(
             'no_credentials',

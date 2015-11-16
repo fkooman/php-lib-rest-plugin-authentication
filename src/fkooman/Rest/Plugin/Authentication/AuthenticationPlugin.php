@@ -76,6 +76,6 @@ class AuthenticationPlugin implements ServicePluginInterface
             }
         }
 
-        return $activePlugin->requestAuthentication();
+        return $activePlugin->requestAuthentication($request);
     }
 }

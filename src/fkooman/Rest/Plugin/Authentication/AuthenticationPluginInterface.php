@@ -31,7 +31,7 @@ interface AuthenticationPluginInterface
     /**
      * return response 401 or show html page or something.
      */
-    public function requestAuthentication();
+    public function requestAuthentication(Request $request);
 
     /**
      * Init, maybe register URL callbacks etc.
