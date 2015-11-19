@@ -1,10 +1,13 @@
 # Release History
 
-## 1.1.0 (...)
+## 2.0.0 (2015-11-19)
 - major refactoring of the code
-- API change for authentication plugins, not for consumers of this API
-- no longer support multiple authentication methods on one endpoint, it
-  is not used anywhere
+- major API change for authentication plugins
+- API change for applications: they can no longer directly use the 
+  authentication plugins, but MUST use this library
+- no longer possible to support two authentication plugins on one endpoint, it 
+  was not used anywhere. Technically this is an API change, so bump major 
+  version
 
 ## 1.0.2 (2015-10-13)
 - fix small bug when mentioned friendly name of authentication plugin 
