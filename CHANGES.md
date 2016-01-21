@@ -1,5 +1,8 @@
 # Release History
 
+## 2.0.1 (2016-01-21)
+- add `DummyAuthentication` to facilitate testing
+
 ## 2.0.0 (2015-11-19)
 - major refactoring of the code
 - major API change for authentication plugins
