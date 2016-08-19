@@ -1,5 +1,8 @@
 # Release History
 
+## 3.0.0 (2016-08-19)
+- update `fkooman/rest`
+
 ## 2.0.1 (2016-01-21)
 - add `DummyAuthentication` to facilitate testing
 

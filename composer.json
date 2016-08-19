@@ -16,7 +16,7 @@
     "name": "fkooman/rest-plugin-authentication",
     "require": {
         "ext-spl": "*",
-        "fkooman/rest": "^1.0.0",
+        "fkooman/rest": "^2.0.0",
         "php": ">=5.4"
     },
     "suggest": {
